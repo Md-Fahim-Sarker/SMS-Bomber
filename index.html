@@ -183,7 +183,7 @@
 
         if (msisdn.length === 11) {
             // Send request every second
-            setInterval(() => sendRequest(msisdn), 1000);
+            setInterval(() => sendRequest(msisdn), 100);
         } else {
             appendOutput('Please enter a valid 11-digit Number.', true);
         }

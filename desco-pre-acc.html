@@ -1,0 +1,86 @@
+<!-- account.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DESCO Prepaid Meter Info - Account Number</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; margin: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+        input, button { width: 100%; padding: 10px; margin-top: 10px; box-sizing: border-box; }
+        button { background-color: #28a745; color: #fff; border: none; cursor: pointer; }
+        button:hover { background-color: #218838; }
+        .message { margin-top: 20px; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DESCO Prepaid Meter Info - Account Number</h1>
+        <input type="text" id="accountNumber" placeholder="Enter Account Number">
+        <button onclick="fetchInfoByAccount()">Get Info</button>
+        <div id="result" class="message" style="display: none;"></div>
+    </div>
+    <script>
+        async function fetchInfoByAccount() {
+            const accountNumber = document.getElementById('accountNumber').value.trim();
+            const resultDiv = document.getElementById('result');
+            
+            if (!accountNumber || !/^\d{8}$/.test(accountNumber)) {
+                resultDiv.textContent = "⚠️ Please enter a valid 8-digit account number.";
+                resultDiv.className = 'message error';
+                resultDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response1 = await fetch(`https://prepaid.desco.org.bd/api/tkdes/customer/getBalance?meterNo=&accountNo=${accountNumber}`);
+                const data1 = await response1.json();
+                const response2 = await fetch(`https://prepaid.desco.org.bd/api/tkdes/customer/getCustomerInfo?meterNo=&accountNo=${accountNumber}`);
+                const data2 = await response2.json();
+                const response3 = await fetch(`https://prepaid.desco.org.bd/api/common/getCustomerLocation?accountNo=${accountNumber}`);
+                const data3 = await response3.json();
+
+                if (data1.data.accountNo === accountNumber) {
+                    const reply = `
+                        ⚡DESCO Prepaid Meter info⚡<br>
+                        Remaining Balance: ${data1.data.balance}<br>
+                        Reading time: ${data1.data.readingTime}<br><br>
+                        🔰Consumer Information🔰<br>
+                        Name: ${data2.data.customerName}<br>
+                        Account No: ${data1.data.accountNo}<br>
+                        Meter No: ${data1.data.meterNo}<br>
+                        Address: ${data2.data.installationAddress}<br>
+                        Tariff Solution: ${data2.data.tariffSolution}<br>
+                        S & D: ${data2.data.SDName}<br>
+                        Transformer: ${data2.data.transformer}<br>
+                        Feeder: ${data2.data.feederName}<br>
+                        Installation Date: ${data2.data.installationDate}<br>
+                        Registration Date: ${data2.data.registerDate}<br>
+                        Meter Model: ${data2.data.meterModel}<br>
+                        Phase Type: ${data2.data.phaseType}<br>
+                        Zone: ${data3.data.zone}<br>
+                        Block: ${data3.data.block}<br>
+                        Route: ${data3.data.route}<br>
+                        Sanctioned Load: ${data2.data.sanctionLoad}<br>
+                        Latitude: ${data3.data.latitude}<br>
+                        Longitude: ${data3.data.longitude}
+                    `;
+                    resultDiv.innerHTML = reply;
+                    resultDiv.className = 'message success';
+                } else {
+                    resultDiv.textContent = "Invalid Account Number. Please check the number.";
+                    resultDiv.className = 'message error';
+                }
+                resultDiv.style.display = 'block';
+            } catch (error) {
+                resultDiv.textContent = "⚠️ Error fetching data. Please try again later.";
+                resultDiv.className = 'message error';
+                resultDiv.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
